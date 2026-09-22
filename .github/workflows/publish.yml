@@ -21,6 +21,10 @@ jobs:
           node-version: '24'
           registry-url: https://registry.npmjs.org
 
+      # OIDC trusted publishing needs npm >= 11.5.1. Do not pin: just be current.
+      - name: Ensure a modern npm
+        run: npm install -g npm@latest && npm --version
+
       # Never publish something the tests have not seen. The same three suites CI runs.
       - name: Verify before publishing
         run: |
@@ -28,9 +32,16 @@ jobs:
           node test/outbound.test.mjs
           node test/smoke.mjs
 
-      # `--provenance` publishes a signed attestation of where this tarball was built,
-      # which is worth having for anything that handles signatures and network access.
+      # TRUSTED PUBLISHING — deliberately NO token.
+      #
+      # npm exchanges this workflow's OIDC identity for a short-lived credential, which is
+      # why `id-token: write` is granted above and why there is no NPM_TOKEN secret to
+      # rotate or leak. Classic npm tokens were retired (creation disabled 2025-11,
+      # existing ones revoked 2025-12), so a long-lived publish token is not the modern
+      # path anyway.
+      #
+      # PREREQUISITE, and it lives on npmjs.com rather than in this repo: the package must
+      # already exist, with this repository and THIS workflow filename registered as a
+      # trusted publisher. See README → Publishing.
       - name: Publish to npm
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

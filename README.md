@@ -175,6 +175,38 @@ To test against a real identity store, point `DSH_MESH_LIVE_STORE` at a director
 `<name>/identity.yaml` entries. It is **opt-in** on purpose: a published plugin's tests must
 pass on someone else's machine.
 
+## Publishing
+
+Publishing uses **npm trusted publishing (OIDC)** — there is no npm token anywhere, in the repo
+or in a secret. npm exchanges the workflow's OIDC identity for a short-lived credential, which
+is also why classic tokens are irrelevant here: npm **disabled their creation in November 2025**
+and **revoked the existing ones in December 2025**.
+
+**One-time setup, on npmjs.com.** A package cannot have a trusted publisher before it exists, so
+the first publish is manual:
+
+1. Publish the first version once from a machine logged into npm:
+   ```bash
+   npm login
+   npm publish --access public
+   ```
+2. Open the package's settings — `https://www.npmjs.com/package/dsh-fleet-mesh/access` — and
+   **Add a trusted publisher**:
+
+   | field | value |
+   |:---|:---|
+   | Publisher | GitHub Actions |
+   | Organization or user | `emiltsoi` |
+   | Repository | `dsh-fleet-mesh` |
+   | Workflow file | `.github/workflows/publish.yml` |
+   | Environment | *(leave empty)* |
+
+**Every release after that is automatic:** publish a GitHub release, and the workflow runs the
+suites and then `npm publish --provenance`.
+
+Two requirements worth knowing: npm CLI **≥ 11.5.1** (the workflow installs the latest), and
+`id-token: write` in the job's permissions — already set.
+
 ## Troubleshooting
 
 **A peer says it cannot reach me.** Check the bind with a *local socket query*
