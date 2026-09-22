@@ -12,7 +12,7 @@
 // socket, verified against a real public key, and delivered to a real handler.
 import { createServer } from 'node:http';
 import { createPublicKey, generateKeyPairSync, verify } from 'node:crypto';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { apply, createMeshHandler, inject, normalizeConfig } from '../lib/index.js';
@@ -271,10 +271,22 @@ effectDisposers.length = 0;
 apply(cordisCtx({ tools: stubTools, agents: agentService }), applyConfig());
 await new Promise((resolve) => setTimeout(resolve, 120)); // let the dynamic import settle
 ok('apply() runs against a context that throws on undeclared services', true);
-// The core is NOT resolvable by bare specifier from this directory — that was the real failure —
-// so this passing means the profile-relative fallback did the work.
-eq('and the real defineTool resolves, so all five tools register', handed.length, 5);
-ok('with no resolution warning', !logs.some((l) => l.includes('could not load @deepseek-ai/dsh-tools')));
+// The core lives in the profile tree on a real install and is ABSENT on CI. The strong claim is
+// therefore guarded on an INDEPENDENT probe of that path — never on the outcome, which would make
+// the assertion tautological. (Same discipline as DSH_MESH_LIVE_STORE.)
+const corePresent = Boolean(
+	process.env.DSH_HOME &&
+		existsSync(join(process.env.DSH_HOME, 'profiles', 'node_modules', '@deepseek-ai', 'dsh-tools', 'package.json'))
+);
+if (corePresent) {
+	eq('the core is present, so the profile-relative fallback resolves and all five tools register', handed.length, 5);
+	ok('with no resolution warning', !logs.some((l) => l.includes('could not load @deepseek-ai/dsh-tools')));
+} else {
+	ok(
+		'the core is absent (as on CI), so it warns and carries on rather than failing the plugin',
+		logs.some((l) => l.includes('could not load @deepseek-ai/dsh-tools'))
+	);
+}
 ok('and the listener was still mounted', effectDisposers.length >= 1);
 for (const dispose of effectDisposers) {
 	try {
