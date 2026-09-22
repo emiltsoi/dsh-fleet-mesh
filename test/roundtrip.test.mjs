@@ -271,7 +271,10 @@ effectDisposers.length = 0;
 apply(cordisCtx({ tools: stubTools, agents: agentService }), applyConfig());
 await new Promise((resolve) => setTimeout(resolve, 120)); // let the dynamic import settle
 ok('apply() runs against a context that throws on undeclared services', true);
-ok('the core import cannot resolve here, and that WARNS instead of crashing', logs.some((l) => l.includes('dsh-tools')));
+// The core is NOT resolvable by bare specifier from this directory — that was the real failure —
+// so this passing means the profile-relative fallback did the work.
+eq('and the real defineTool resolves, so all five tools register', handed.length, 5);
+ok('with no resolution warning', !logs.some((l) => l.includes('could not load @deepseek-ai/dsh-tools')));
 ok('and the listener was still mounted', effectDisposers.length >= 1);
 for (const dispose of effectDisposers) {
 	try {
