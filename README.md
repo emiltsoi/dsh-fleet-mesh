@@ -192,24 +192,47 @@ or in a secret. npm exchanges the workflow's OIDC identity for a short-lived cre
 is also why classic tokens are irrelevant here: npm **disabled their creation in November 2025**
 and **revoked the existing ones in December 2025**.
 
-**One-time setup, on npmjs.com.** A package cannot have a trusted publisher before it exists, so
-the first publish is manual:
+**One-time setup.** A package cannot have a trusted publisher before it exists, so the first
+publish is manual:
 
 1. Publish the first version once from a machine logged into npm:
    ```bash
    npm login
    npm publish --access public
    ```
-2. Open the package's settings — `https://www.npmjs.com/package/dsh-fleet-mesh/access` — and
-   **Add a trusted publisher**:
+2. Configure the trusted publisher. **Two prerequisites that are easy to miss and are not
+   validated when you save the form:**
+   - **2FA must be enabled on the npm account** — trusted publishing requires it.
+   - The trust must grant the **publish** permission. A trust that authenticates but was created
+     without it fails with `403 … OIDC permission denied for this action`, which reads like an
+     authentication problem and is not one.
+
+   The unambiguous route is the CLI (needs **npm ≥ 11.15.0**; the registry allows only *one*
+   configuration per package, so revoke an existing one first):
+
+   ```bash
+   npm trust list dsh-fleet-mesh          # what npm actually has, and its permissions
+   npm trust revoke --id <id> dsh-fleet-mesh
+   npm trust github dsh-fleet-mesh \
+     --repo emiltsoi/dsh-fleet-mesh \
+     --file publish.yml \
+     --allow-publish
+   ```
+
+   Or via the website — `https://www.npmjs.com/package/dsh-fleet-mesh/access` → **Add a trusted
+   publisher**:
 
    | field | value |
    |:---|:---|
    | Publisher | GitHub Actions |
    | Organization or user | `emiltsoi` |
    | Repository | `dsh-fleet-mesh` |
-   | Workflow file | `.github/workflows/publish.yml` |
-   | Environment | *(leave empty)* |
+   | Workflow file | `publish.yml` |
+   | Environment | *(leave empty — this job declares none)* |
+
+   **`publish.yml`, not the full path.** npm's own CLI documents `--file` as the *"name of
+   workflow file within a repository's .github folder"*, and a full path is a mismatch that only
+   surfaces at publish time.
 
 **Every release after that is automatic:** publish a GitHub release, and the workflow runs the
 suites and then `npm publish --provenance`.
@@ -238,6 +261,25 @@ Check both before suspecting the transport.
 
 **A wake-listed peer stopped being woken.** That is the runaway breaker. It clears on a real
 user message in the session — by design, mesh traffic cannot clear it.
+
+**`403 … OIDC permission denied for this action` when publishing.** This one is worth reading
+carefully, because it looks like an authentication failure and is not. The tell is in the log:
+npm signs a provenance statement and publishes it to the Sigstore transparency log *before* the
+PUT is rejected — and provenance is signed **locally** from the GitHub token, so it proves only
+that `id-token: write` works. It says nothing about npm's config.
+
+So the trust exists and authenticated, and the **publish action** was denied. Check, in order:
+
+1. The trust grants the **publish** permission, not only staged publish.
+2. The **workflow filename** matches — the file's *name* (`publish.yml`), not a path.
+3. The repository and org/user match exactly, and the environment is empty if the job declares
+   none.
+4. **2FA is enabled on the npm account** — required for trusted publishing.
+
+`npm trust list <package>` shows what npm actually has. A `404` or `ENEEDAUTH` instead means npm
+never got an OIDC token at all — a different problem: look at the job's `id-token: write`
+permission, and make sure `NODE_AUTH_TOKEN` is not set to an empty string, which makes npm take
+the token path and never fall through to trusted publishing.
 
 ## License
 
