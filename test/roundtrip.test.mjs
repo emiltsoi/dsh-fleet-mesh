@@ -15,7 +15,7 @@ import { createPublicKey, generateKeyPairSync, verify } from 'node:crypto';
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { apply, createMeshHandler, normalizeConfig } from '../lib/index.js';
+import { apply, createMeshHandler, inject, normalizeConfig } from '../lib/index.js';
 import { createToolDescriptors, registerMeshTools } from '../lib/tools.mjs';
 import { canonicalJson } from '../lib/registry.mjs';
 
@@ -66,12 +66,37 @@ const agent = {
 	steer: (m) => received.push(['steer', m]),
 	inject: (m) => received.push(['inject', m]),
 };
-const receiveCtx = {
-	logger: { info() {}, warn() {}, debug() {} },
-	effect: (fn) => fn(),
-	on: () => () => {},
-	get: (name) => (name === 'agents' ? { list: () => [agent], get: () => agent } : undefined),
-};
+// A context that behaves like CORDIS, not like a plain object.
+//
+// This is the fix for a real false green. The original stub was an ordinary object, so reading
+// an undeclared service returned `undefined` — while Cordis's context proxy THROWS
+// ("cannot get property \"tools\" without inject"). So `ctx.get?.('tools') ?? ctx.tools` passed
+// this suite and killed the plugin in the harness, which then removed it from the profile.
+// A stub more forgiving than the real thing is worse than no stub.
+const logs = [];
+const effectDisposers = [];
+const agentService = { list: () => [agent], get: () => agent };
+const cordisCtx = (services = {}) =>
+	new Proxy(
+		{
+			logger: { info: (m) => logs.push(m), warn: (m) => logs.push(m), debug() {} },
+			effect: (fn) => {
+				const dispose = fn();
+				if (typeof dispose === 'function') effectDisposers.push(dispose);
+				return dispose;
+			},
+			on: () => () => {},
+			...services,
+		},
+		{
+			get: (target, prop) => {
+				if (typeof prop === 'symbol' || String(prop).startsWith('_')) return Reflect.get(target, prop);
+				if (prop in target) return Reflect.get(target, prop);
+				throw new Error(`cannot get property "${String(prop)}" without inject`);
+			},
+		}
+	);
+const receiveCtx = cordisCtx({ agents: agentService });
 
 let receiveHandler = null;
 const receiveServer = createServer((req, res) => receiveHandler(req, res));
@@ -195,23 +220,12 @@ ok('and the registry saw the DELETE', registryCalls.some((c) => c.method === 'DE
 // Every other suite calls createToolDescriptors or createMeshHandler directly, so none of them
 // would notice if apply() failed to hand the tools to the harness. That is the seam this closes.
 console.log('\napply() — the wiring');
-const logs = [];
-const effectDisposers = [];
-const applyCtx = (toolsService) => ({
-	logger: { info: (m) => logs.push(m), warn: (m) => logs.push(m), debug() {} },
-	effect: (fn) => {
-		const dispose = fn();
-		if (typeof dispose === 'function') effectDisposers.push(dispose);
-		return dispose;
-	},
-	on: () => () => {},
-	get: (name) => {
-		if (name === 'tools') return toolsService;
-		if (name === 'agents') return { list: () => [agent], get: () => agent };
-		return undefined;
-	},
-});
 const applyConfig = () => ({ fleetRoot, port: 0, host: '127.0.0.1', agents: { lily: { preset: 'lily' } } });
+
+// The regression guard for the failure that actually happened: the plugin read `ctx.tools` and
+// `ctx.agents` without declaring them, Cordis threw, and the harness removed the plugin from the
+// profile. If a future edit drops either from `inject`, this fails immediately.
+eq('the plugin declares every service it reads', [...inject].sort(), ['agents', 'tools']);
 
 // The helper on its own: this is the five-tools-into-the-harness step.
 const handed = [];
@@ -249,19 +263,16 @@ ok('and a missing defineTool likewise', (() => {
 	}
 })());
 
-// apply() must survive both degradations without taking the receive route down with it.
-apply(applyCtx(undefined), applyConfig());
-ok('apply() with no tools service does not throw', true);
-ok('and says so rather than failing the row', logs.some((l) => l.includes('tools service is unavailable')));
-ok('and still mounted its listener', effectDisposers.length >= 1);
-
+// apply() against a CORDIS-LIKE context: it must touch only what it declared. Any undeclared
+// service read throws here exactly as it does in the harness, so this is the test that would
+// have caught the real failure.
 logs.length = 0;
 effectDisposers.length = 0;
-apply(applyCtx(stubTools), applyConfig());
+apply(cordisCtx({ tools: stubTools, agents: agentService }), applyConfig());
 await new Promise((resolve) => setTimeout(resolve, 120)); // let the dynamic import settle
-ok('apply() with a tools service does not throw either', true);
+ok('apply() runs against a context that throws on undeclared services', true);
 ok('the core import cannot resolve here, and that WARNS instead of crashing', logs.some((l) => l.includes('dsh-tools')));
-ok('and the listener was still mounted regardless', effectDisposers.length >= 1);
+ok('and the listener was still mounted', effectDisposers.length >= 1);
 for (const dispose of effectDisposers) {
 	try {
 		dispose();

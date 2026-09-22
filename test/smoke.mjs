@@ -68,7 +68,10 @@ const listeners = new Map();
 const ctx = {
 	logger: { info() {}, warn() {}, debug() {} },
 	effect: (fn) => fn(),
-	get: (name) => (name === 'agents' ? agents : undefined),
+	// The plugin DECLARES `agents` (see its `inject`) and reads it as a property. A stub that
+	// served it only through a get() helper would hide the very failure that broke the real
+	// load — Cordis throws on reading an undeclared service, and a forgiving stub does not.
+	agents,
 	on: (name, fn) => {
 		listeners.set(name, fn);
 		return () => listeners.delete(name);
