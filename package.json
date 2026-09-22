@@ -1,27 +1,47 @@
 {
-  "name": "dsh-mesh",
+  "name": "dsh-fleet-mesh",
   "version": "0.1.0",
-  "private": true,
-  "description": "Session-aware mesh relay for DSH agents — the DSH substrate's peer in the hermes-mesh fleet. Ed25519-signed envelopes, one port, dispatch by [to:].",
+  "description": "Session-aware mesh relay for DSH agents: an Ed25519-signed receive route and delivery policy, plus outbound sending, a peer directory and a mesh-peer-registry client.",
   "type": "module",
+  "license": "MIT",
+  "author": "Emil Tsoi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emiltsoi/dsh-fleet-mesh.git"
+  },
+  "bugs": {
+    "url": "https://github.com/emiltsoi/dsh-fleet-mesh/issues"
+  },
+  "homepage": "https://github.com/emiltsoi/dsh-fleet-mesh#readme",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.1.5-rc.2"
+  },
+  "scripts": {
+    "test": "node test/mesh.test.mjs && node test/outbound.test.mjs && node test/smoke.mjs"
+  },
   "keywords": [
     "dsh",
     "dsh-plugin",
     "mesh",
+    "agent-mesh",
+    "fleet",
+    "ed25519",
     "hermes-mesh",
-    "ed25519"
+    "a2a"
   ],
-  "license": "MIT",
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

@@ -1,4 +1,4 @@
-# dsh-mesh bundle patch.
+# dsh-fleet-mesh bundle patch.
 #
 # Installed as a profile bundle (profiles/web/package.json: dsh.profile.bundles), so the
 # boot merges this patch exactly as a manual mount line would.
@@ -7,7 +7,7 @@
 # opens nothing and serves nobody. A deployment supplies its own values as an id-targeted
 # override in its own patch layer — for example:
 #
-#   - id: dsh-mesh
+#   - id: dsh-fleet-mesh
 #     config:
 #       host: '0.0.0.0'            # loopback-only by default; 0.0.0.0 to be reachable
 #       port: 8760
@@ -35,5 +35,5 @@
 #     peer can reach the endpoint and this list is the only thing between a chatty peer
 #     and a bill. Who may wake an agent is a social decision, so the plugin ships no names.
 - insert:
-    - id: dsh-mesh
-      name: 'dsh-mesh'
+    - id: dsh-fleet-mesh
+      name: 'dsh-fleet-mesh'

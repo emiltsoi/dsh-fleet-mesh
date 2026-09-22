@@ -1,6 +1,6 @@
-// dsh-mesh — smoke suite: the actual route table, with a REAL signature.
+// dsh-fleet-mesh — smoke suite: the actual route table, with a REAL signature.
 //
-//   node harness\plugins\dsh-mesh\test\smoke.mjs
+//   node harness\plugins\dsh-fleet-mesh\test\smoke.mjs
 //
 // The unit suite proves the parts; this proves the wiring. It mounts the plugin on a
 // stub web server, writes a peer identity into a temp fleet root, signs a real body
@@ -31,7 +31,7 @@ const eq = (name, actual, expected) => {
 
 // ---- a peer, with a key of its own, in a throwaway fleet root ------------------
 const peers = {};
-const root = mkdtempSync(join(tmpdir(), 'dsh-mesh-smoke-'));
+const root = mkdtempSync(join(tmpdir(), 'dsh-fleet-mesh-smoke-'));
 for (const name of ['ada', 'bob']) {
 	const { privateKey, publicKey } = generateKeyPairSync('ed25519');
 	peers[name] = {
@@ -87,7 +87,7 @@ const settings = normalizeConfig({
 	},
 });
 eq('the plugin exports apply() for the loader', typeof apply, 'function');
-// The measured constraint: the harness web server is loopback-only, so dsh-mesh owns
+// The measured constraint: the harness web server is loopback-only, so dsh-fleet-mesh owns
 // its listener — and defaults to loopback, meaning installing it opens nothing.
 eq('defaults to loopback on the chosen mesh port', [settings.host, settings.port], ['127.0.0.1', 8760]);
 const handler = createMeshHandler(ctx, settings);
@@ -159,7 +159,7 @@ eq('and reported delivered', good.json.delivered, true);
 eq('a wake-listed peer opening a new thread fires a turn', good.json.mode, 'followup');
 eq('the agent was handed exactly one message', delivered.length, 1);
 eq('through the method the policy chose', delivered[0][0], 'followup');
-eq('as a plugin-sourced message', delivered[0][1].source, { kind: 'plugin', plugin: 'dsh-mesh', form: 'mesh-receive' });
+eq('as a plugin-sourced message', delivered[0][1].source, { kind: 'plugin', plugin: 'dsh-fleet-mesh', form: 'mesh-receive' });
 eq('carrying the peer text', delivered[0][1].content[0].text.includes('hello from the fleet'), true);
 eq('and naming the sender', delivered[0][1].content[0].text.startsWith('[mesh from ada'), true);
 

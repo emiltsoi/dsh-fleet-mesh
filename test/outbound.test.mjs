@@ -1,7 +1,7 @@
-// dsh-mesh — suite for the outbound half: envelope signing, delivery retries, the peer
+// dsh-fleet-mesh — suite for the outbound half: envelope signing, delivery retries, the peer
 // directory, and the registry client's canonical-JSON contract.
 //
-//   node harness\plugins\dsh-mesh\test\outbound.test.mjs
+//   node harness\plugins\dsh-fleet-mesh\test\outbound.test.mjs
 //
 // The canonical-JSON assertion is the one that matters most: registration is signed with
 // `json.dumps(payload, sort_keys=True, separators=(",",":"), ensure_ascii=False)` on the

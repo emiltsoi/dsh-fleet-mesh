@@ -1,6 +1,6 @@
-// dsh-mesh — unit suite for the pure modules: envelope, crypto, policy, delivery.
+// dsh-fleet-mesh — unit suite for the pure modules: envelope, crypto, policy, delivery.
 //
-//   node harness\plugins\dsh-mesh\test\mesh.test.mjs
+//   node harness\plugins\dsh-fleet-mesh\test\mesh.test.mjs
 //
 // Everything here is pure, so it runs without a harness, a network or a key on disk.
 // The route table — the part that needs a real signature and a stub web server — is
@@ -116,7 +116,7 @@ ok('accepts a raw 32-byte base64 public key (the other framing mesh_core tolerat
 })());
 eq('an unreadable key is false, not a throw', verifyPayload('not a key', ts, body, sig), false);
 
-const tmp = mkdtempSync(join(tmpdir(), 'dsh-mesh-'));
+const tmp = mkdtempSync(join(tmpdir(), 'dsh-fleet-mesh-'));
 try {
 	const block = join(tmp, 'block.yaml');
 	writeFileSync(block, `id: ada\ntransports:\n  hermes_webhook:\n    auth:\n      public_key: |\n        -----BEGIN PUBLIC KEY-----\n        ${pubPem.split('\n')[1]}\n        -----END PUBLIC KEY-----\n`);
@@ -226,7 +226,7 @@ for (const mode of ['followup', 'steer', 'inject']) {
 	await deliverToAgent({ agent: spyAgent, mode, envelope: env({ from: 'ada' }), createUserMessage: helper });
 }
 eq('each policy mode maps to the matching agent method', calls.map((c) => c[0]), ['followup', 'steer', 'inject']);
-eq('the message is a plugin-sourced user message', calls[0][1].source, { kind: 'plugin', plugin: 'dsh-mesh', form: 'mesh-receive' });
+eq('the message is a plugin-sourced user message', calls[0][1].source, { kind: 'plugin', plugin: 'dsh-fleet-mesh', form: 'mesh-receive' });
 ok('the rendered text is what the agent actually receives', calls[0][1].content[0].text.includes('hello there'));
 ok('the prompt carries provenance and the reply expectation', renderPrompt(env({ from: 'ada' })).startsWith('[mesh from ada · id m-1 · action info · reply no]'));
 eq('a missing method is reported, not thrown', (await deliverToAgent({ agent: { id: 'x' }, mode: 'steer', envelope: env(), createUserMessage: helper })).code, 'no-method');
