@@ -15,9 +15,10 @@ jobs:
         # 20 is the oldest supported line; 24 is what the harness ships with.
         node-version: ['20', '22', '24']
     steps:
-      - uses: actions/checkout@v4
+      # v7 rather than v4: v4's own runtime targets Node 20, which runners now deprecate.
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
 
