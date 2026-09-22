@@ -1,0 +1,36 @@
+name: Publish
+
+# Fires on a published GitHub release, so the version that ships is the version that was
+# tagged and reviewed. workflow_dispatch is there for a deliberate re-run.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance: ties the published tarball to this commit and run
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+
+      # Never publish something the tests have not seen. The same three suites CI runs.
+      - name: Verify before publishing
+        run: |
+          node test/mesh.test.mjs
+          node test/outbound.test.mjs
+          node test/smoke.mjs
+
+      # `--provenance` publishes a signed attestation of where this tarball was built,
+      # which is worth having for anything that handles signatures and network access.
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

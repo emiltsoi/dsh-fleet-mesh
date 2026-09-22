@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 20 is the oldest supported line; 24 is what the harness ships with.
+        node-version: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # No install step, deliberately: this plugin depends on node: builtins only, so
+      # there is nothing to fetch. If that ever stops being true, add the step back and
+      # ask why — a mesh transport should not need a dependency tree.
+      - name: Envelope, crypto, access, policy, delivery
+        run: node test/mesh.test.mjs
+
+      - name: Signing, retries, peer directory, registry canonical JSON
+        run: node test/outbound.test.mjs
+
+      - name: The route table, with real Ed25519 signatures
+        run: node test/smoke.mjs
+
+      # The suites read a real identity store only when DSH_MESH_LIVE_STORE is set, so
+      # they pass on a machine that has never seen a mesh.
