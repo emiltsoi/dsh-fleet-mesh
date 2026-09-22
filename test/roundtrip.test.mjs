@@ -15,8 +15,8 @@ import { createPublicKey, generateKeyPairSync, verify } from 'node:crypto';
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createMeshHandler, normalizeConfig } from '../lib/index.js';
-import { createToolDescriptors } from '../lib/tools.mjs';
+import { apply, createMeshHandler, normalizeConfig } from '../lib/index.js';
+import { createToolDescriptors, registerMeshTools } from '../lib/tools.mjs';
 import { canonicalJson } from '../lib/registry.mjs';
 
 let pass = 0;
@@ -190,6 +190,85 @@ eq('one peer by name', (await tools.mesh_sync.execute({ agent: 'ada' })).synced,
 console.log('\nmesh_deregister');
 eq('it withdraws the row', (await tools.mesh_deregister.execute({})).state, 'removed');
 ok('and the registry saw the DELETE', registryCalls.some((c) => c.method === 'DELETE' && c.url === '/peers/lily'));
+
+// ---- the wiring: what a restart actually depends on ------------------------------
+// Every other suite calls createToolDescriptors or createMeshHandler directly, so none of them
+// would notice if apply() failed to hand the tools to the harness. That is the seam this closes.
+console.log('\napply() — the wiring');
+const logs = [];
+const effectDisposers = [];
+const applyCtx = (toolsService) => ({
+	logger: { info: (m) => logs.push(m), warn: (m) => logs.push(m), debug() {} },
+	effect: (fn) => {
+		const dispose = fn();
+		if (typeof dispose === 'function') effectDisposers.push(dispose);
+		return dispose;
+	},
+	on: () => () => {},
+	get: (name) => {
+		if (name === 'tools') return toolsService;
+		if (name === 'agents') return { list: () => [agent], get: () => agent };
+		return undefined;
+	},
+});
+const applyConfig = () => ({ fleetRoot, port: 0, host: '127.0.0.1', agents: { lily: { preset: 'lily' } } });
+
+// The helper on its own: this is the five-tools-into-the-harness step.
+const handed = [];
+const stubTools = {
+	register: (definition) => {
+		handed.push(definition);
+		return () => handed.pop();
+	},
+};
+const wiringDisposers = registerMeshTools({ tools: stubTools, defineTool: (d) => d, settings, logger: () => {} });
+eq('all five tools are handed to the harness', handed.map((d) => d.name).sort(), [
+	'mesh_deregister',
+	'mesh_list',
+	'mesh_register',
+	'mesh_send',
+	'mesh_sync',
+]);
+eq('and a disposer comes back for each', wiringDisposers.length, 5);
+for (const dispose of wiringDisposers) dispose();
+eq('which unregister them again', handed.length, 0);
+ok('a missing tools service is refused loudly, not silently', (() => {
+	try {
+		registerMeshTools({ tools: null, defineTool: (d) => d, settings });
+		return false;
+	} catch {
+		return true;
+	}
+})());
+ok('and a missing defineTool likewise', (() => {
+	try {
+		registerMeshTools({ tools: stubTools, defineTool: null, settings });
+		return false;
+	} catch {
+		return true;
+	}
+})());
+
+// apply() must survive both degradations without taking the receive route down with it.
+apply(applyCtx(undefined), applyConfig());
+ok('apply() with no tools service does not throw', true);
+ok('and says so rather than failing the row', logs.some((l) => l.includes('tools service is unavailable')));
+ok('and still mounted its listener', effectDisposers.length >= 1);
+
+logs.length = 0;
+effectDisposers.length = 0;
+apply(applyCtx(stubTools), applyConfig());
+await new Promise((resolve) => setTimeout(resolve, 120)); // let the dynamic import settle
+ok('apply() with a tools service does not throw either', true);
+ok('the core import cannot resolve here, and that WARNS instead of crashing', logs.some((l) => l.includes('dsh-tools')));
+ok('and the listener was still mounted regardless', effectDisposers.length >= 1);
+for (const dispose of effectDisposers) {
+	try {
+		dispose();
+	} catch {
+		/* already released */
+	}
+}
 
 // Tear down cleanly, and AWAIT it. On Windows, calling process.exit() while a server's async
 // close is still in flight trips a libuv assertion (uv_async.c) and the process exits 1 —
