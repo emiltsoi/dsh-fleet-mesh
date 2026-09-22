@@ -34,5 +34,10 @@ jobs:
       - name: The route table, with real Ed25519 signatures
         run: node test/smoke.mjs
 
+      # The one that makes the halves one thing: the tools driving this plugin's own receive
+      # route over a real socket, against a stub registry that verifies the signature.
+      - name: Round trip — the tools talking to this plugin's own listener
+        run: node test/roundtrip.test.mjs
+
       # The suites read a real identity store only when DSH_MESH_LIVE_STORE is set, so
       # they pass on a machine that has never seen a mesh.

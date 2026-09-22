@@ -22,25 +22,29 @@ Sender: mesh_send(agent="ada", message="Review this plan", action="do", reply="y
 
 ## Status
 
-**The receive half is complete and tested.** Signature verification, the delivery matrix, the
-wake list, the replay window, per-envelope dedupe, and the runaway breaker — all running today.
+**Both halves are complete and tested** — 170 assertions across four suites.
 
-**The tool surface is next.** The outbound half already exists as tested libraries (envelope
-signing, delivery with the retry budget, the peer directory, and a registry client), but it is
-not yet exposed to an agent as tools. Until it is, this plugin can be *reached* but cannot
-*speak*. The table below is the intended surface, not a current one.
+*Receiving:* signature verification, the delivery matrix, the wake list, the replay window,
+per-envelope dedupe, and the runaway breaker.
+
+*Sending:* the five tools below, built on the same tested libraries — envelope signing, the
+delivery retry budget, the peer directory, and a registry client.
 
 ## Tools
 
-Mirroring the hermes-mesh surface, so muscle memory transfers:
+Named exactly as hermes-mesh names hers, so muscle memory transfers between substrates.
 
-| tool | purpose | state |
-|:---|:---|:---|
-| `mesh_list` | list peers from the identity store | library ready, not yet exposed |
-| `mesh_send` | sign and deliver one envelope | library ready, not yet exposed |
-| `mesh_sync` | cache a peer identity from the registry | library ready, not yet exposed |
-| `mesh_register` | publish this agent's row to a registry | library ready, not yet exposed |
-| `mesh_deregister` | withdraw this agent's row | library ready, not yet exposed |
+| tool | purpose |
+|:---|:---|
+| `mesh_list` | list peers from the local identity store — read-only, no network |
+| `mesh_send` | sign and deliver one envelope; reports **delivered** or a failure, never queues silently |
+| `mesh_sync` | fetch peer identities from the registry into this deployment's own cache |
+| `mesh_register` | publish this agent's row — name, receive URL and public key — to the registry |
+| `mesh_deregister` | withdraw this agent's row |
+
+`mesh_send` returns a result rather than a promise of one: `state` is `delivered` or `error`,
+and a failure names its cause (`unreachable`, `unauthorized`, `unknown-peer`, `not-configured`).
+There is no queue behind it — see below.
 
 ## What it does NOT do
 
@@ -166,7 +170,13 @@ restart. A spool held in plugin memory would not.
 node test/mesh.test.mjs       # envelope, crypto, access, policy, delivery
 node test/outbound.test.mjs   # signing, retries, the peer directory, registry canonical JSON
 node test/smoke.mjs           # the route table, driven with real Ed25519 signatures
+node test/roundtrip.test.mjs  # the tools driving this plugin's own receive route
 ```
+
+The round trip is the one that makes the halves one thing: it stands up the real receive
+handler on a loopback port, a real identity store in a temp directory, and a stub registry that
+**verifies the registration signature** rather than accepting it — then drives all five tools
+through it. Nothing is mocked at the boundary that matters.
 
 No dependencies to install: this plugin uses `node:` builtins only, and CI runs the suites on
 Node 20, 22 and 24 with no install step.

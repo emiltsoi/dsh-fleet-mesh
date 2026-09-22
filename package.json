@@ -1,6 +1,6 @@
 {
   "name": "dsh-fleet-mesh",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Session-aware mesh relay for DSH agents: an Ed25519-signed receive route and delivery policy, plus outbound sending, a peer directory and a mesh-peer-registry client.",
   "type": "module",
   "license": "MIT",
@@ -30,7 +30,7 @@
     "dsh": ">=0.1.5-rc.2"
   },
   "scripts": {
-    "test": "node test/mesh.test.mjs && node test/outbound.test.mjs && node test/smoke.mjs"
+    "test": "node test/mesh.test.mjs && node test/outbound.test.mjs && node test/smoke.mjs && node test/roundtrip.test.mjs"
   },
   "keywords": [
     "dsh",

@@ -31,6 +31,7 @@ jobs:
           node test/mesh.test.mjs
           node test/outbound.test.mjs
           node test/smoke.mjs
+          node test/roundtrip.test.mjs
 
       # TRUSTED PUBLISHING — deliberately NO token.
       #
