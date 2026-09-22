@@ -17,6 +17,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { apply, createMeshHandler, inject, normalizeConfig } from '../lib/index.js';
 import { createToolDescriptors, registerMeshTools } from '../lib/tools.mjs';
+import { deliverToAgent } from '../lib/deliver.mjs';
 import { canonicalJson } from '../lib/registry.mjs';
 
 let pass = 0;
@@ -188,6 +189,34 @@ eq('through inject, because the wake list is empty by default', received[0][0], 
 ok('and the prompt names the sender', received[0][1].content[0].text.startsWith('[mesh from lily'), true);
 ok('and carries the body', received[0][1].content[0].text.includes('hello from the round trip'), true);
 ok('and the reply expectation', received[0][1].content[0].text.includes('reply yes'), true);
+
+// The shape the RESTORE validator demands. `assertMessageEventShape` rejects a `user/message`
+// whose message lacks `role: "user"`, and ONE such event bricks the entire log — seq 9307,
+// 2026-09-22. The append path does not check it, so the suite must.
+eq('the delivered message carries role "user"', received[0][1].role, 'user');
+ok('and a non-empty id', typeof received[0][1].id === 'string' && received[0][1].id.length > 0);
+
+// THE STRONGER ASSERTION — the one that would have caught the incident.
+//
+// Schema-completeness must NOT depend on the core helper resolving. `createUserMessage` is
+// `(input) => createMessage({ ...input, role: 'user' })`: ONE WORD. The original defect imported
+// the core to obtain that word and then degraded to an object missing precisely it, so this
+// drives the delivery path with NO helper at all.
+const noHelper = [];
+const bareAgent = {
+	id: 'bare',
+	session: { header: { agentPreset: 'lily' } },
+	inject: (m) => noHelper.push(m),
+};
+const bareResult = await deliverToAgent({
+	agent: bareAgent,
+	mode: 'inject',
+	envelope: { from: 'lily', id: 'e-1', action: 'info', reply: 'no', body: 'schema test' },
+	createUserMessage: undefined,
+});
+ok('delivery succeeds with no core helper', bareResult.ok);
+eq('and the message is STILL schema-complete — role', noHelper[0]?.role, 'user');
+ok('and still carries an id', typeof noHelper[0]?.id === 'string' && noHelper[0].id.startsWith('dshfm-'));
 
 console.log('\nmesh_send — the refusals');
 eq('an unknown peer is refused, not guessed at', (await tools.mesh_send.execute({ agent: 'nobody', message: 'x' })).status, 'unknown-peer');
