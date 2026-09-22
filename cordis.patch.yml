@@ -1,0 +1,39 @@
+# dsh-mesh bundle patch.
+#
+# Installed as a profile bundle (profiles/web/package.json: dsh.profile.bundles), so the
+# boot merges this patch exactly as a manual mount line would.
+#
+# THIS FILE IS THE NEUTRAL DEFAULT: it inserts the row with no config, so a fresh install
+# opens nothing and serves nobody. A deployment supplies its own values as an id-targeted
+# override in its own patch layer — for example:
+#
+#   - id: dsh-mesh
+#     config:
+#       host: '0.0.0.0'            # loopback-only by default; 0.0.0.0 to be reachable
+#       port: 8760
+#       allow:                     # the real door, checked before anything else runs
+#         - 192.168.0.0/23
+#       durableRoute: '...'        # named in an "unreachable" reply, so a sender is told
+#                                  # where to write instead of retrying into a void
+#       agents:
+#         <agent-name>:
+#           preset: <preset>       # the session is resolved by PRESET, never by a pinned id
+#           sessionId: null        # optional override for the odd case
+#           keyPath: '...'         # this agent's Ed25519 private key (PKCS8 PEM)
+#           wake: []               # who may START a turn — empty ships by default
+#
+# Two things worth knowing before configuring it:
+#
+#   * The allow list is not decoration. Node can bind an address or all interfaces but
+#     CANNOT bind a subnet, so the network limit lives in the request path and is checked
+#     before parsing, before the peer lookup and before any signature work. Loopback is
+#     always admitted.
+#
+#   * The wake list is enforced here and nowhere else. A mesh transport may have no
+#     per-sender wake policy at all (hermes-mesh's adapter.py: "Ed25519 signature
+#     verification at intake acts as an allowlist"), in which case any correctly-signed
+#     peer can reach the endpoint and this list is the only thing between a chatty peer
+#     and a bill. Who may wake an agent is a social decision, so the plugin ships no names.
+- insert:
+    - id: dsh-mesh
+      name: 'dsh-mesh'

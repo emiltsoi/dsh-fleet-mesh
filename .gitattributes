@@ -1,0 +1,3 @@
+# These files are LF, deliberately: the plugin is loaded exactly as written, and a checkout that
+# flipped every line ending would turn a one-line change into a whole-file diff.
+* text=auto eol=lf

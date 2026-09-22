@@ -1,0 +1,30 @@
+{
+  "name": "dsh-mesh",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Session-aware mesh relay for DSH agents — the DSH substrate's peer in the hermes-mesh fleet. Ed25519-signed envelopes, one port, dispatch by [to:].",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "mesh",
+    "hermes-mesh",
+    "ed25519"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

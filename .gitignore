@@ -1,0 +1,14 @@
+# Dependencies and build output (none are ours)
+node_modules/
+
+# Edit-time safety copies. Git is the history now — these are the habit git replaces.
+*.bak
+*.bak-*
+*.bak.*
+*.orig
+*.rej
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*.swp
