@@ -92,7 +92,14 @@ eq(
 		body: 'answer',
 	}
 );
-eq('wireBody orders keys from,text (sort_keys parity with the sender)', wireBody('lily', 'X'), '{"from":"lily","text":"X"}');
+// `sort_keys` parity means PYTHON'S BYTES, not merely our key order. This assertion used to check
+// the order alone and expected the compact form — so it passed for as long as it existed while
+// every envelope we sent was byte-wise unlike the fleet's. It was invisible because a receiver
+// verifies the bytes it received and never re-serializes: only a peer that DOES re-serialize, or
+// anyone diffing our bytes against Python's, could see it. Spacing and ASCII escaping are part of
+// the contract; pyjson.test.mjs pins them against bytes Python itself produced.
+eq('wireBody is the fleet\'s canonical bytes (sort_keys, spaced)', wireBody('lily', 'X'), '{"from": "lily", "text": "X"}');
+eq('and ASCII-escapes above 0x7e, as Python does', wireBody('lily', '—'), '{"from": "lily", "text": "\\u2014"}');
 
 // ------------------------------------------------------------------ crypto ----
 group('crypto');

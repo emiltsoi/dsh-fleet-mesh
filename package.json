@@ -30,7 +30,7 @@
     "dsh": ">=0.1.5-rc.2"
   },
   "scripts": {
-    "test": "node test/mesh.test.mjs && node test/outbound.test.mjs && node test/smoke.mjs && node test/roundtrip.test.mjs"
+    "test": "node test/pyjson.test.mjs && node test/mesh.test.mjs && node test/outbound.test.mjs && node test/smoke.mjs && node test/roundtrip.test.mjs"
   },
   "keywords": [
     "dsh",

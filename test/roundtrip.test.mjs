@@ -182,6 +182,12 @@ eq('reachableOnly filters', (await tools.mesh_list.execute({ reachableOnly: true
 console.log('\nmesh_send — the round trip');
 received.length = 0;
 const sent = await tools.mesh_send.execute({ agent: 'lily', message: 'hello from the round trip', action: 'do', reply: 'yes' });
+// A bare "error" hides the whole diagnosis, and this suite is the only place a real send is
+// driven end to end. Print the refusal whenever it happens, not only when someone is watching.
+if (sent.state !== 'delivered') {
+	console.log('         send refused: ' + JSON.stringify(sent));
+	console.log('         receiver said: ' + JSON.stringify(logs.slice(-3)));
+}
 eq('the send reports delivery', sent.state, 'delivered');
 ok('and carries an envelope id', typeof sent.message_id === 'string' && sent.message_id.length > 0);
 eq('the receiver handed it to the agent', received.length, 1);

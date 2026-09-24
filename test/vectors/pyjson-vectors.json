@@ -1,0 +1,96 @@
+{
+  "generator": "python 3.14.3 json.dumps(sort_keys=True)",
+  "vectors": [
+    {
+      "name": "plain",
+      "from": "lily",
+      "text": "[mesh][v:1][from:lily][to:linda][id:abc-123][action:info][reply:no]hello",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20225b6d6573685d5b763a315d5b66726f6d3a6c696c795d5b746f3a6c696e64615d5b69643a6162632d3132335d5b616374696f6e3a696e666f5d5b7265706c793a6e6f5d68656c6c6f227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"[mesh][v:1][from:lily][to:linda][id:abc-123][action:info][reply:no]hello\"}"
+    },
+    {
+      "name": "empty",
+      "from": "lily",
+      "text": "",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a2022227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"\"}"
+    },
+    {
+      "name": "emdash",
+      "from": "lily",
+      "text": "[mesh] a — b",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20225b6d6573685d2061205c75323031342062227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"[mesh] a \\u2014 b\"}"
+    },
+    {
+      "name": "japanese",
+      "from": "lily",
+      "text": "[mesh] 温石の間",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20225b6d6573685d205c75366532395c75373766335c75333036655c7539353933227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"[mesh] \\u6e29\\u77f3\\u306e\\u9593\"}"
+    },
+    {
+      "name": "emoji",
+      "from": "lily",
+      "text": "[mesh] dragon 🐉",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20225b6d6573685d20647261676f6e205c75643833645c7564633039227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"[mesh] dragon \\ud83d\\udc09\"}"
+    },
+    {
+      "name": "emoji2",
+      "from": "lily",
+      "text": "🐉🐉",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20225c75643833645c75646330395c75643833645c7564633039227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"\\ud83d\\udc09\\ud83d\\udc09\"}"
+    },
+    {
+      "name": "accents",
+      "from": "lily",
+      "text": "café naïve über",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20226361665c7530306539206e615c75303065667665205c7530306663626572227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"caf\\u00e9 na\\u00efve \\u00fcber\"}"
+    },
+    {
+      "name": "quotes",
+      "from": "lily",
+      "text": "quote \" backslash \\ slash /",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a202271756f7465205c22206261636b736c617368205c5c20736c617368202f227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"quote \\\" backslash \\\\ slash /\"}"
+    },
+    {
+      "name": "braces",
+      "from": "lily",
+      "text": "{\"from\": \"x\", \"text\": \"y\"}",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20227b5c2266726f6d5c223a205c22785c222c205c22746578745c223a205c22795c227d227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"{\\\"from\\\": \\\"x\\\", \\\"text\\\": \\\"y\\\"}\"}"
+    },
+    {
+      "name": "controls",
+      "from": "lily",
+      "text": "tab\there newline\nhere bell\u0007 back\b form\f ret\r",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20227461625c7468657265206e65776c696e655c6e686572652062656c6c5c7530303037206261636b5c6220666f726d5c66207265745c72227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"tab\\there newline\\nhere bell\\u0007 back\\b form\\f ret\\r\"}"
+    },
+    {
+      "name": "del",
+      "from": "lily",
+      "text": "del char and nbsp end",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a202264656c5c7530303766206368617220616e64206e6273705c7530306130656e64227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"del\\u007f char and nbsp\\u00a0end\"}"
+    },
+    {
+      "name": "bmpedge",
+      "from": "lily",
+      "text": "� ￿ Ā",
+      "hex": "7b2266726f6d223a20226c696c79222c202274657874223a20225c7566666664205c7566666666205c7530313030227d",
+      "readable": "{\"from\": \"lily\", \"text\": \"\\ufffd \\uffff \\u0100\"}"
+    },
+    {
+      "name": "unicodeto",
+      "from": "lilÿ",
+      "text": "[mesh] from a unicode name",
+      "hex": "7b2266726f6d223a20226c696c5c7530306666222c202274657874223a20225b6d6573685d2066726f6d206120756e69636f6465206e616d65227d",
+      "readable": "{\"from\": \"lil\\u00ff\", \"text\": \"[mesh] from a unicode name\"}"
+    }
+  ]
+}

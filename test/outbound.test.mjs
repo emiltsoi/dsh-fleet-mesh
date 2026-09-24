@@ -55,7 +55,7 @@ const request = buildSignedRequest({
 	now: 1_790_060_000_000,
 });
 eq('the timestamp is seconds, as the fleet sends it', request.headers['x-mesh-timestamp'], '1790060000');
-ok('the body is the wire JSON', request.body.toString('utf8').startsWith('{"from":"lily","text":"[mesh]'));
+ok('the body is the wire JSON in the fleet\'s canonical form', request.body.toString('utf8').startsWith('{"from": "lily", "text": "[mesh]'));
 ok(
 	'and the signature verifies over "timestamp\\nbody"',
 	verifyPayload(pubPem, request.headers['x-mesh-timestamp'], request.body, request.headers['x-mesh-signature'])
